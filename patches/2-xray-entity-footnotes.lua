@@ -1191,6 +1191,25 @@ function XRayPlugin:getSubMenuItems(...)
     return items
 end
 
+-- Hook Clear Cache: it wipes self.characters/historical_figures/locations/terms (the
+-- entity lists our scan is built from) but has no idea our overlay exists, so without
+-- this the underline overlay and tap targets kept showing entity mentions from the
+-- book's now-discarded data until something unrelated (a settings toggle, a menu
+-- reopen on the next book) happened to trigger a rescan. Also drop the on-disk entity
+-- cache so a stale signature can't get reused if a later fetch happens to reproduce
+-- the same entity names.
+if XRayPlugin.clearCache then
+    local orig_clearCache = XRayPlugin.clearCache
+    function XRayPlugin:clearCache(...)
+        local ret = orig_clearCache(self, ...)
+        self:clearEntityUnderlines()
+        self.last_entity_settings_state = nil
+        local cache_file = self._getEntityCachePath and self:_getEntityCachePath()
+        if cache_file then pcall(os.remove, cache_file) end
+        return ret
+    end
+end
+
 log("applied to xray.koplugin class table")
 end)
 
