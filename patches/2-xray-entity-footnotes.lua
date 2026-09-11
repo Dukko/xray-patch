@@ -1045,8 +1045,8 @@ local ENTITY_FOOTNOTES_EN_STRINGS = {
 -- takes effect from the second book/instance onward within the same session. Menu access
 -- (getSubMenuItems) has no such gap: a menu can't be opened before the class table has
 -- already been patched, so the actual localization/mount setup lives here, in a function
--- called from both hooks, idempotent so it's cheap to call from either or both.
-local function ensureEntityFootnotesSetup(self)
+-- called from the lifecycle/menu hooks below. It is idempotent, so repeated calls are cheap.
+local function ensureEntityFootnotesSetup(self, skip_scan)
     local ok1, err1 = pcall(function()
         -- self.loc:init() reloads self.loc.translations from scratch on every book open,
         -- so this can't be a one-time thing - it has to be redone whenever that happens.
@@ -1075,7 +1075,7 @@ local function ensureEntityFootnotesSetup(self)
 
     local ok3, err3 = pcall(function()
         local settings = self.ai_helper and self.ai_helper.settings or {}
-        if self.scanBookForEntities and settings.entity_footnotes_enabled ~= false
+        if not skip_scan and self.scanBookForEntities and settings.entity_footnotes_enabled ~= false
                 and not self.entity_xp_matches and not self._entity_scan_in_progress then
             self:scanBookForEntities()
         end
@@ -1083,13 +1083,25 @@ local function ensureEntityFootnotesSetup(self)
     if not ok3 then log("initial scan error: " .. tostring(err3)) end
 end
 
--- Hook per-document init: covers the mount/scan/loc setup for the second book onward
--- within a session (see the comment on ensureEntityFootnotesSetup above for why the
--- very first book of a session can't rely on this alone).
+-- X-Ray restores the per-book entity tables in autoLoadCache(), which runs from
+-- onReaderReady after plugin init. Hook that restore point so Entity Footnotes loads
+-- its own sidecar cache (or scans if needed) only after characters/locations/terms
+-- are available. This also covers the first book opened after KOReader starts.
+if XRayPlugin.autoLoadCache then
+    local orig_autoLoadCache = XRayPlugin.autoLoadCache
+    function XRayPlugin:autoLoadCache(...)
+        local ret = orig_autoLoadCache(self, ...)
+        ensureEntityFootnotesSetup(self)
+        return ret
+    end
+end
+
+-- Hook per-document init: mount/localization setup may safely happen here on KOReader
+-- versions that reuse the patched class, but scanning must wait until autoLoadCache().
 local orig_init = XRayPlugin.init
 function XRayPlugin:init(...)
     local ret = orig_init(self, ...)
-    ensureEntityFootnotesSetup(self)
+    ensureEntityFootnotesSetup(self, true)
     return ret
 end
 
