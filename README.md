@@ -1,3 +1,5 @@
+> **No longer maintained** — This project is no longer maintained as of November 2026. It works as-is, but there will be no further updates or bug fixes. Feel free to fork it.
+
 # Entity Footnotes - a KOReader user patch for xray.koplugin
 
 ![Platform](https://img.shields.io/badge/platform-KOReader-green.svg)
