@@ -1,4 +1,6 @@
-> **No longer maintained** — This project is no longer maintained as of November 2026. It works as-is, but there will be no further updates or bug fixes. Feel free to fork it.
+> **No longer needed** — [xray.koplugin 26.11.9](https://github.com/ultimatejimmy/xray.koplugin/releases/tag/26.11.9) builds entity underlining directly into the plugin, so this patch is unnecessary. If you have `2-xray-entity-footnotes.lua` in your patches folder, you can safely remove it.
+>
+> This project is no longer maintained as of November 2026.
 
 # Entity Footnotes - a KOReader user patch for xray.koplugin
 
